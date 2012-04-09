@@ -10,9 +10,9 @@ class TestDiagsBase < MiniTest::Unit::TestCase
   end
   
   def setup
-    @diags = Diags::Base.new()
-    @package = Diags::Package.new
-    @image = Diags::Image.new
+    @diags = Diags::Node::Base.new()
+    @package = Diags::Node::Package.new
+    @image = Diags::Node::Image.new
   end
 
   def test_base_instantiator

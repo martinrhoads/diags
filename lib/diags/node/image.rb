@@ -1,9 +1,10 @@
 module Diags
-  class Image < Diags::Node
-    
-    def initialize()
-      super
+  module Node
+    class Image < Diags::Node::Base
+      
+      def initialize()
+        super
+      end
     end
-    
   end
 end
