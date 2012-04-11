@@ -21,3 +21,4 @@ class TestDiagsBase < MiniTest::Unit::TestCase
 
 end
 
+
