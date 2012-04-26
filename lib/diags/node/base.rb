@@ -5,20 +5,24 @@ module Diags
       def initialize(opts={})
         @parents=[]
         @artifacts=[]
-        @hash=nil
+        @state=nil
       end
       
-      def hash
-        if @hash.nil?
-          hash=''
-          hash << self.class.name
-          @parents.each {|parent| hash << parent.hash }
-          @hash=hash
+      def state
+        if @state.nil?
+          state=''
+          state << self.class.name
+          @parents.each {|parent| state << parent.state }
+          @state=state
         end
-        return @hash
+        return @state
       end
 
       def build()
+        raise "not implmented"
+      end
+      
+      def rebuild()
         raise "not implmented"
       end
       
@@ -36,7 +40,7 @@ module Diags
 
       protected
 
-      def my_hash
+      def my_state
       end
 
       

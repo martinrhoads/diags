@@ -1,4 +1,8 @@
+$LOAD_PATH.unshift('.')
+Dir.chdir(File.dirname __FILE__)
+
 module Diags
+
   USER = ENV['USER']
   LIB_DIR = File.dirname __FILE__
   BASE_DIR = File.dirname LIB_DIR
@@ -13,13 +17,22 @@ module Diags
   require 'diags/node/base'
   require 'diags/node/package'
   require 'diags/node/image'
+  require 'diags/node/custom_image'
+  require 'diags/node/repo'
   
   require 'diags/cache/base'
   require 'diags/cache/file'
+  require 'diags/cache/directory'
+
+  def run(command)
+    STDERR.puts "about to run " + command
+    output = `#{command}`
+    raise "running #{command} failed with: \n#{output}" unless $?.success?
+  end
 
 end
 
-
+include Diags
 include Diags::Utils
 
 sudo_mkdir Diags::CACHE_DIR

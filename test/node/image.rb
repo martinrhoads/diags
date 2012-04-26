@@ -14,7 +14,9 @@ class TestImage < MiniTest::Unit::TestCase
   def test_foo
     puts "in foo" 
     @image.build
-    puts "@image.hash is " + @image.hash
+    puts "@image.hash is ::" + @image.hash
+    puts "::end hash"
+#    @image.rebuild
     assert true
   end
 

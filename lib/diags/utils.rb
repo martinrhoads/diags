@@ -13,6 +13,16 @@ module Diags
       dir
     end
 
+    def random_ramfs
+      dir = random_dir
+      run "sudo mount -t ramfs size=20m #{dir}"
+      dir
+    end
+
+    def unmount(path)
+      run "sudo umount -l #{path} && rmdir #{path} "
+    end
+
     def sudo_mkdir(dir)
       # TODO: decide how to handle the automatic creation of shit compared to prompting user 
       begin

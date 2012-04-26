@@ -2,48 +2,55 @@ module Diags
   module Node
     class Image < Diags::Node::Base
       @@mirror = 'http://127.0.0.1:3142/ubuntu'
-      @release = 'precise'
-
       
-
       # TODO: needs a way to specify cache type
       
-      def initialize()
+      def initialize(release='precise')
         super
+        @release = release
       end
 
-      def build()
-        puts "building image..."
-        
-        # get a random ramdisk
-
-        # debootstrap 
-        output = `#{command}`
-        if $?.success?
-          puts "built image"
+      def build(destination_directory=Diags::Utils::random_dir)
+        if Cache::Directory.has_state?(state)
+          Cache::Directory.restore_state(state,destination_directory)
         else
-          STDERR.puts "debootstrap failed!!!"
-          STDERR.puts "output :"
-          STDERR.puts output
-          raise "debootstrap failed" 
+          private_build(destination_directory)
         end
-        
       end
 
-      def hash
+      def rebuild(destination_directory='/tmp/martin')
+        private_build(destination_directory)
+      end
+
+      def state
         hash = super + "\n"
-        hash << "hi there\n"
-        hash << command
+        hash << @release
         hash << "\n"
-        return hash
+        Digest::MD5.hexdigest(hash)
       end
 
       private 
 
-      def command
-        "true #time sudo debootstrap #{@release} /tmp/debootstrap/ http://127.0.0.1:3142/ubuntu"
-      end
+      def private_build(destination_directory='/tmp/martin')
+        puts "building image..."
+        
+        # get a random ramdisk
+        dir = Diags::Utils::random_ramfs
+        puts "random dir is " + dir
+        
+        # create image with debootstrap 
+        run "time sudo debootstrap #{@release} #{dir} http://127.0.0.1:3142/ubuntu"
+        
+        # cache
+        Cache::Directory.save_state(state,dir)
+        
+        # set state
+        run "mkdir -p destination_directory"
+        run "rsync -a --delete #{dir}/ #{destination_directory}/"
 
+        # clean up 
+        Diags::Utils::unmount(dir)
+      end
 
     end
   end
