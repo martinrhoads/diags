@@ -18,7 +18,7 @@ module Diags
   require 'diags/node/package'
   require 'diags/node/image'
   require 'diags/node/custom_image'
-  require 'diags/node/repo'
+  require 'diags/node/git'
   
   require 'diags/cache/base'
   require 'diags/cache/file'
@@ -28,6 +28,7 @@ module Diags
     STDERR.puts "about to run " + command
     output = `#{command}`
     raise "running #{command} failed with: \n#{output}" unless $?.success?
+    $?.success?
   end
 
 end

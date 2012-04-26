@@ -16,6 +16,7 @@ module Diags
         else
           private_build(destination_directory)
         end
+        destination_directory
       end
 
       def rebuild(destination_directory='/tmp/martin')
@@ -45,7 +46,7 @@ module Diags
         Cache::Directory.save_state(state,dir)
         
         # set state
-        run "mkdir -p destination_directory"
+        run "mkdir -p #{destination_directory}"
         run "rsync -a --delete #{dir}/ #{destination_directory}/"
 
         # clean up 
