@@ -1,0 +1,137 @@
+#!/bin/bash -ex 
+
+imagedir=$1
+cs_chef_dir=/mnt/shared/cs-chef
+
+
+# fix up grub defaults
+sed -i.orig 's%GRUB_CMDLINE_LINUX_DEFAULT=.*%GRUB_CMDLINE_LINUX_DEFAULT="nosplash nomodeset text INIT_VERBOSE=yes init=/sbin/init -v noplymouth"%' $imagedir/etc/default/grub
+sed -i.orig 's%GRUB_TIMEOUT=.*%GRUB_TIMEOUT=2%' $imagedir/etc/default/grub
+
+cd `dirname $0`
+cp chroot_script.sh ${imagedir}/root/chroot_script.sh
+chmod +x ${imagedir}/root/chroot_script.sh
+chroot $imagedir /root/chroot_script.sh 
+
+# Ubuntu base doesn't have sudoers.d support by default.
+mkdir -p /etc/sudoers.d
+cat <<EOF >$imagedir/etc/sudoers
+# User privilege specification
+root	ALL=(ALL:ALL) ALL
+
+# Members of the admin group may gain root privileges
+%admin ALL=(ALL) ALL
+
+## Read drop-in files from /etc/sudoers.d
+## (the '#' here does not indicate a comment)
+#includedir /etc/sudoers.d
+EOF
+
+cat<<EOF >$imagedir/root/seed.sh
+#!/bin/bash -ex
+echo "exit 0" > /etc/rc.local
+#sed -i.orig -e 's/\/root\/seed.sh//' /etc/rc.local
+macaddress=\$(ifconfig | awk '/eth0/ { print \$5 }')
+
+# This gives us the substratum ip address
+if [ -f /etc/substratum/substratum_location.txt ]; then
+  . /etc/substratum/substratum_location.txt
+else
+  echo FATAL: could not determine substratum-services address.  Missing /etc/substratum/substratum_location.txt
+  exit 1
+fi
+
+# This is the difference between DEVMODE with nfs shared cookbooks and PRODMODE that downloads cs-chef.tgz cookbooks.
+if /usr/sbin/rpcinfo -t 192.168.0.254 nfs 4; then
+
+cat<<EOC >/etc/chef/solo.rb
+file_cache_path "$cs_chef_dir"
+cookbook_path "$cs_chef_dir/cookbooks"
+role_path "$cs_chef_dir/roles"
+json_attribs "http://\$substratum/machine/\$macaddress/chef_solo_attributes"
+
+require '/etc/chef/handler'
+fail_handler = Cloudscaling::Fail.new
+success_handler = Cloudscaling::Success.new
+exception_handlers << fail_handler
+report_handlers << success_handler
+EOC
+
+else
+
+cat<<EOC >/etc/chef/solo.rb
+file_cache_path "/tmp/chef-solo"
+cookbook_path "/tmp/chef-solo/cookbooks"
+role_path "/tmp/chef-solo/roles"
+json_attribs "http://\$substratum/machine/\$macaddress/chef_solo_attributes"
+recipe_url "http://\$substratum/cs-chef.tar.gz"
+
+require '/etc/chef/handler'
+fail_handler = Cloudscaling::Fail.new
+success_handler = Cloudscaling::Success.new
+exception_handlers << fail_handler
+report_handlers << success_handler
+EOC
+
+fi
+
+cat<<EOC>/etc/chef/handler.rb
+require 'rubygems'
+
+module Cloudscaling
+  class Fail < Chef::Handler
+    def report
+      # The Node is available as +node+
+      subject = "Chef run failed on #{node.name}\n"
+      # +run_status+ is a value object with all of the run status data
+      message = "#{run_status.formatted_exception}\n"
+      # Join the backtrace lines. Coerce to an array just in case.
+      message << Array(backtrace).join("\n")
+      system('curl -XPUT -d\'{"state": "fail"}\' "http://\$substratum/machine/\$macaddress"')
+    end
+  end
+  class Success < Chef::Handler
+    def report
+      # The Node is available as +node+
+      subject = "Chef run succeeded on #{node.name}\n"
+      system('curl -XPUT -d\'{"state": "provisioned"}\' "http://\$substratum/machine/\$macaddress"')
+    end
+  end
+end
+EOC
+
+/usr/bin/chef-solo 2>&1 >> /var/log/firstboot.log
+EOF
+chmod +x $imagedir/root/seed.sh
+
+cat<<EOF >$imagedir/etc/auto.master
++auto.master
+/mnt         /etc/auto.mnt
+EOF
+
+cat<<EOF >$imagedir/etc/auto.mnt
+shared 192.168.0.254:/export/shared
+EOF
+
+cat << EOF >> $imagedir/etc/rc.local
+touch /var/log/firstboot.log 
+chmod 644 /var/log/firstboot.log
+chown root:admin /var/log/firstboot.log
+/root/seed.sh 2>&1 >> /var/log/firstboot.log
+EOF
+sed -i -e 's/exit 0//' $imagedir/etc/rc.local
+
+# Chef doesn't like stopping :(
+declare -a KILLCHEFS=(
+  $(pgrep chef-client)
+)
+for chef in "${KILLCHEFS[@]}"; do
+  kill -9 $chef
+done
+
+# ipmievd escaped it's chroot jail!
+for ipmievd in `pgrep ipmievd`; do
+  kill -9 $ipmievd ||true
+done
+
+sync 

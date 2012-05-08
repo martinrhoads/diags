@@ -1,6 +1,7 @@
 $LOAD_PATH.unshift('.')
 Dir.chdir(File.dirname __FILE__)
 
+
 module Diags
 
   USER = ENV['USER']
@@ -11,8 +12,8 @@ module Diags
 
   require 'fileutils'
   require 'digest/md5'
-  
   require 'diags/utils'
+  require 'logger'
   
   require 'diags/node/base'
   require 'diags/node/package'
@@ -24,12 +25,7 @@ module Diags
   require 'diags/cache/file'
   require 'diags/cache/directory'
 
-  def run(command)
-    STDERR.puts "about to run " + command
-    output = `#{command}`
-    raise "running #{command} failed with: \n#{output}" unless $?.success?
-    $?.success?
-  end
+
 
 end
 
@@ -39,3 +35,4 @@ include Diags::Utils
 sudo_mkdir Diags::CACHE_DIR
 sudo_mkdir Diags::TEMP_DIR
 
+logger.info "starting diags run..."

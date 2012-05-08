@@ -13,12 +13,12 @@ module Diags
 
         raise "DirectoryDoesNotExist" unless Dir.exists? directory
         if check_repo_for_commit(GIT_CACHE_DIR,@sha1)
-          STDERR.puts "found commit locally"
+          logger.info "found commit locally"
           reset_directory(directory,@sha1)
         else 
           run "git --git-dir=#{GIT_CACHE_DIR} fetch --force  #{@origin} refs/heads/*:refs/remotes/origin/*"
           raise "could not find commit " unless check_repo_for_commit(@origin,@sha1)
-          STDERR.puts "got commit from origin"
+          logger.info "got commit from origin"
           reset_directory(directory,@sha1)
         end
         directory
