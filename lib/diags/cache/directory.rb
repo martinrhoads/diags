@@ -10,7 +10,7 @@ module Diags
       def self.save_state(state,source_directory)
         logger.info "saving directory state..."
         run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{source_directory} add . "
-        run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{source_directory} commit -am 'state'"
+        run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{source_directory} commit -am '#{state}'"
         run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{source_directory} tag --force #{state}"
       end      
 

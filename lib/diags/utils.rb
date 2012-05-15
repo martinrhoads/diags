@@ -16,14 +16,14 @@ module Diags
     def run(command)
       Diags::Utils::logger.info "running : '#{command}'" 
       begin
-        output = `#{command}`
+        output = `#{command}`.chomp
       rescue Object => o
         STDERR.puts "error caught"
         STDERR.puts "output was: \n" + output
         raise o
       end
       raise "running #{command} failed with: \n#{output}" unless $?.success?
-      $?.success?
+      output
     end
     
 
@@ -59,5 +59,22 @@ module Diags
       end
       
     end
+
+    def make_chrootable(directory)
+      %w{proc dev sys}.each {|dir| run "sudo mkdir -p #{File.join(directory,dir)}"}  
+      run "sudo mount -t proc none #{directory}/proc"
+      run "sudo mount --bind /dev #{directory}/dev"
+      run "sudo mount sysfs -t sysfs #{directory}/sys"
+      run "sudo mount -t devpts none #{directory}/dev/pts"
+    end
+
+    def undo_make_chrootable(directory)
+      run "sudo umount -lf #{directory}/dev/pts"
+      run "sudo umount -lf #{directory}/proc"
+      run "sudo umount -lf #{directory}/dev"
+      run "sudo umount -lf #{directory}/sys"
+    end
+    
+    
   end
 end

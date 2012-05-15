@@ -3,6 +3,8 @@
 
 # this is to try out a sample of what diags may look like to the end user
 
+script = File.read(File.join(File.dirname(File.expand_path(__FILE__)),'scripts','chroot_script.sh'))
+
 require File.join(File.dirname(__FILE__),'..','lib','diags')
 
 
@@ -56,7 +58,9 @@ packages = %w{
 
 
 image = Diags::Node::Image.new('precise',packages)
+puts "image is #{image}"
 custom_image = Diags::Node::CustomImage.new(image,script)
-custom_image.go  
-puts "custom_image.state is #{custom_image.state}"
+packaged_image = Diags::Node::PackageImage.new(custom_image)
+
+packaged_image.go 
 

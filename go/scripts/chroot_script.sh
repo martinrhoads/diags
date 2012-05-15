@@ -33,6 +33,8 @@ echo "deb http://localhost:3142/ubuntu $UBUNTU_RELEASE-security main restricted 
 apt-get update
 #apt-get install localepurge
 #apt-get upgrade -y -u # broken by nfs.. hangs on statd restart(natty)
+
+
 apt-get install -y linux-image-server
 
 groupadd admin
@@ -80,7 +82,7 @@ if [ "$UBUNTU_RELEASE" = "natty" ]; then
   update-rc.d chef-client disable
   service chef-client stop
 else
-  apt-get install -y ruby1.9.3
+  apt-get install -y ruby1.9.3 build-essential
   HOME=/tmp
   gem install chef --no-user-install --no-rdoc --no-ri --version 0.10.8
   ln -s /usr/local/bin/chef-solo /usr/bin/chef-solo
@@ -101,7 +103,7 @@ substratum  ALL=NOPASSWD: ${my_chef}
 EOF
 chmod 0400 /etc/sudoers.d/substratum 
 
-apt-get install -y joe ipmitool dhcpcd
+apt-get install -y  ipmitool dhcpcd
 
 mv /sbin/initctl.bak /sbin/initctl
 mv /root/zz-update-grub.disabled /etc/kernel/postinst.d/zz-update-grub 

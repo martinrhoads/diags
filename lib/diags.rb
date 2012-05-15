@@ -18,7 +18,9 @@ module Diags
   require 'diags/node/base'
   require 'diags/node/package'
   require 'diags/node/image'
+  require 'diags/node/server'
   require 'diags/node/custom_image'
+  require 'diags/node/package_image'
   require 'diags/node/git'
   
   require 'diags/cache/base'

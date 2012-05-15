@@ -15,7 +15,7 @@ namespace :test do
 
   # TODO : find out out to really call all 
   desc "test all"
-  task :all => [:base, :image, :repo, "cache:all" ]
+  task :all => [:base, :image, :server, :repo, "cache:all" ]
   
   desc "base test"
   task :base do
@@ -27,6 +27,12 @@ namespace :test do
   task :image do 
     require File.join @diags_base, 'lib', 'diags'
     require File.join @diags_test_base, 'node', 'image'
+  end
+
+  desc "server test"
+  task :server do 
+    require File.join @diags_base, 'lib', 'diags'
+    require File.join @diags_test_base, 'node', 'server'
   end
 
   desc "repo test"
