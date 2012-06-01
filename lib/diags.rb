@@ -1,7 +1,6 @@
 $LOAD_PATH.unshift('.')
 Dir.chdir(File.dirname __FILE__)
 
-
 module Diags
 
   USER = ENV['USER']
@@ -9,6 +8,7 @@ module Diags
   BASE_DIR = File.dirname LIB_DIR
   TEMP_DIR = '/tmp/diags'
   CACHE_DIR = '/var/tmp/diags'
+  GIT_CACHE_DIR = File.join CACHE_DIR, 'git'
 
   require 'fileutils'
   require 'digest/md5'
@@ -27,14 +27,18 @@ module Diags
   require 'diags/cache/file'
   require 'diags/cache/directory'
 
-
-
 end
 
 include Diags
 include Diags::Utils
 
-sudo_mkdir Diags::CACHE_DIR
 sudo_mkdir Diags::TEMP_DIR
+sudo_mkdir Diags::CACHE_DIR
+
+unless Dir.exists? Diags::GIT_CACHE_DIR
+  sudo_mkdir Diags::GIT_CACHE_DIR
+  run "git --git-dir=#{Diags::GIT_CACHE_DIR} init --bare"
+end
+
 
 logger.info "starting diags run..."
