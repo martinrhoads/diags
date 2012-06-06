@@ -1,0 +1,9 @@
+autoconf 
+./configure --prefix=/usr/local --disable-install-doc
+make clean 
+make
+make install DESTDIR="<%= opts[:destination_dir] %>"
+
+  
+
+

@@ -12,8 +12,8 @@ module Diags
       end
 
       def go
-        if Cache::Directory.has_state?(state)
-          Cache::Directory.restore_state(state,@destination_directory)
+        if Cache::Directory.has_state?(@state)
+          Cache::Directory.restore_state(@state,@destination_directory)
         else
           @image.go(@destination_directory)
           build(@destination_directory)
@@ -41,6 +41,7 @@ module Diags
           chroot_script = File.join(image_dir,'tmp','script')
           File.open(tmp_file, 'w') {|f| f.write(@script) }
           run "sudo cp /etc/mtab #{File.join(image_dir,'/etc/mtab')}"
+          run "sudo mkdir #{File.join(image_dir,'tmp')}"
           run "sudo mv #{tmp_file} #{chroot_script} && sudo chmod +x #{chroot_script}"
           logger.debug "about to chroot into image at: #{image_dir}"
           run "sudo chroot #{image_dir} ./tmp/script"

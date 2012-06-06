@@ -1,0 +1,3 @@
+
+
+echo hi > /root/hi

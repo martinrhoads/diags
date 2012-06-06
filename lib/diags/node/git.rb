@@ -1,15 +1,19 @@
 module Diags
   module Node
     class Git < Diags::Node::Base
-      GIT_CACHE_DIR = ::File.join(Diags::CACHE_DIR,'git')
       
-      def initialize(origin,sha1)
-#        super
-        @origin = origin
-        @sha1 = sha1
+      def initialize(opts)
+        @origin = opts['origin']
+        raise "you need to specify either a sha1 or a branch" unless opts.include?('sha1') ^ opts.include?('branch')
+        if opts['sha1']
+          @sha1 = opts['sha1']
+        else
+          @sha1 = `git ls-remote #{opts['origin']} | grep #{opts['branch']} | awk '{print $1}'`.chomp
+          raise "could not find branch #{opts['branch']} on remote #{opts['origin']}" if @sha1.empty?
+        end
       end
 
-      def go(directory=Diags::Utils::random_dir)
+      def go(directory=Diags::Utils::random_ramfs)
 
         raise "DirectoryDoesNotExist" unless Dir.exists? directory
         if check_repo_for_commit(GIT_CACHE_DIR,@sha1)

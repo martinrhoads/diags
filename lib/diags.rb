@@ -14,12 +14,17 @@ module Diags
   require 'digest/md5'
   require 'diags/utils'
   require 'logger'
+  require 'erb'
+  require 'fpm'
+  require 'pry'
   
   require 'diags/node/base'
   require 'diags/node/package'
+  require 'diags/node/package_substratum'
   require 'diags/node/image'
   require 'diags/node/server'
   require 'diags/node/custom_image'
+  require 'diags/node/image_seed'
   require 'diags/node/package_image'
   require 'diags/node/git'
   
@@ -40,5 +45,9 @@ unless Dir.exists? Diags::GIT_CACHE_DIR
   run "git --git-dir=#{Diags::GIT_CACHE_DIR} init --bare"
 end
 
+
+unless Dir.exists? GIT_CACHE_DIR
+  run "git init --bare #{GIT_CACHE_DIR}"
+end
 
 logger.info "starting diags run..."

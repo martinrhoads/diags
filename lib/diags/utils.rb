@@ -13,19 +13,24 @@ module Diags
     end
 
 
-    def run(command)
+    def run(command,directory=nil)
+      #TODO: decide if this is right 
       Diags::Utils::logger.info "running : '#{command}'" 
       begin
-        output = `#{command}`.chomp
+        formatted_command = ''
+        formatted_command << "cd #{directory} && " if defined? directory
+        formatted_command << command.gsub(/#.*$/,'') # remove any comments
+        output = `bash -cex '#{formatted_command}'`.chomp
       rescue Object => o
         STDERR.puts "error caught"
-        STDERR.puts "output was: \n" + output
+        STDERR.puts "output was:"
+        STDERR.puts output
         raise o
       end
       raise "running #{command} failed with: \n#{output}" unless $?.success?
       output
     end
-    
+
 
     def random_file
       file = File.join(Diags::TEMP_DIR,'file-' + rand(999999).to_s)
@@ -42,6 +47,7 @@ module Diags
     def random_ramfs
       dir = random_dir
       run "sudo mount -t ramfs size=20m #{dir}"
+      run "sudo chown $USER:$USER #{dir}"
       dir
     end
 

@@ -15,7 +15,7 @@ namespace :test do
 
   # TODO : find out out to really call all 
   desc "test all"
-  task :all => [:base, :image, :server, :repo, "cache:all" ]
+  task :all => [:base, :image, :seed_image, :server, :repo, "cache:all" ]
   
   desc "base test"
   task :base do
@@ -29,6 +29,12 @@ namespace :test do
     require File.join @diags_test_base, 'node', 'image'
   end
 
+  desc "seed image test"
+  task :seed_image do 
+    require File.join @diags_base, 'lib', 'diags'
+    require File.join @diags_test_base, 'node', 'seed_image'
+  end
+
   desc "server test"
   task :server do 
     require File.join @diags_base, 'lib', 'diags'
@@ -39,6 +45,18 @@ namespace :test do
   task :repo do 
     require File.join @diags_base, 'lib', 'diags'
     require File.join @diags_test_base, 'node', 'repo'
+  end
+
+  desc "package test"
+  task :package do 
+    require File.join @diags_base, 'lib', 'diags'
+    require File.join @diags_test_base, 'node', 'package'
+  end
+
+  desc "package substratum test"
+  task :package_substratum do 
+    require File.join @diags_base, 'lib', 'diags'
+    require File.join @diags_test_base, 'node', 'package_substratum'
   end
 
   namespace :cache do 
