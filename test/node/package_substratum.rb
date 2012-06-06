@@ -8,13 +8,13 @@ class TestPackageSubstratum < MiniTest::Unit::TestCase
   def setup
     @config = {
       'repos' => {
-        'substratum' => {
+        'substratum-0.5.1' => {
           'origin' => 'ssh://pd.cloudscaling.com:29418/substratum',
           'branch' => 'develop',
           'build_command' => 'rake build',
           'build_artifact' => 'pkg/substratum-0.5.1.gem',
         },
-        'substratum-cli' => {
+        'substratum-cli-0.5.1' => {
           'origin' => 'ssh://pd.cloudscaling.com:29418/substratum-cli',
           'branch' => 'develop',
           'build_command' => 'rake build',
