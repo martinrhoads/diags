@@ -4,9 +4,7 @@ module Diags
       CACHE_DIR = ::File.join(Diags::CACHE_DIR,'git')
       
       def initialize()
-        unless Dir.exists? CACHE_DIR
-          run("git --git-dir=#{CACHE_DIR} init --bare")
-        end
+        super
       end
 
       def self.save_state(state,source_directory)

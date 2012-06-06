@@ -71,11 +71,11 @@ module Diags
       run "sudo mount -t proc none #{directory}/proc"
       run "sudo mount --bind /dev #{directory}/dev"
       run "sudo mount sysfs -t sysfs #{directory}/sys"
-#      run "sudo mount -t devpts none #{directory}/dev/pts"
+      run "sudo mount -t devpts none #{directory}/dev/pts"
     end
 
     def undo_make_chrootable(directory)
-#      run "sudo umount -lf #{directory}/dev/pts"
+      run "sudo umount -lf #{directory}/dev/pts"
       run "sudo umount -lf #{directory}/proc"
       run "sudo umount -lf #{directory}/dev"
       run "sudo umount -lf #{directory}/sys"
