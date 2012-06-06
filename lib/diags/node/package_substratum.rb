@@ -16,12 +16,13 @@ module Diags
       end
 
       def go()
+        destination_dir = random_ramfs
         if Cache::Directory.has_state?(@state)
           logger.debug "found previous state for #{self.class}"
+          Diags::Cache::Directory.restore_state(@state,destination_dir)
         else
           logger.debug "building #{self.class}"
           repo_dir = @repo.go
-          destination_dir = random_ramfs
 
           # insert dependency packages
           FileUtils.mkdir_p(File.join(repo_dir,"/vendor/cache/"))
@@ -32,38 +33,38 @@ module Diags
 
           run("DIAGS_DESTINATION_DIR=#{destination_dir} GIT_DIR=#{GIT_CACHE_DIR} GIT_WORK_TREE=#{repo_dir} #{@build_command}",repo_dir)
 
-          fake_root = random_ramfs
-          FileUtils.mkdir_p File.join(fake_root,'srv/substratum/services')
+          FileUtils.mkdir_p File.join(destination_dir,'srv/substratum/services')
           stuff_to_copy = Dir.glob File.join(repo_dir,'*')
           Dir.glob(File.join(repo_dir,'.??*')).each do |hidden_file|
             stuff_to_copy << hidden_file
           end
           stuff_to_copy.delete(File.join(repo_dir,'logs')) if stuff_to_copy.include?(File.join(repo_dir,'logs'))
           stuff_to_copy.each do |thing|
-            STDERR.puts "about to copy #{thing} to #{File.join(fake_root,'srv/substratum/services',File.basename(thing))}"
-            FileUtils.cp_r(thing,File.join(fake_root,'srv/substratum/services',File.basename(thing)))
+            FileUtils.cp_r(thing,File.join(destination_dir,'srv/substratum/services',File.basename(thing)))
           end
 
           [
+           "/etc/default",
            "/etc/init",
            "/etc/logrotate.d",
+           "/etc/substratum",
+           "/usr/bin",
            "/var/log/substratum",
            "/var/run/substratum",
            "/var/tmp/substratum",
-           "/etc/default",
-           "/etc/substratum",
-           "/usr/bin",
           ].each do |dir|
-            FileUtils.mkdir_p File.join(fake_root,dir)
+            FileUtils.mkdir_p File.join(destination_dir,dir)
           end
+
+          # copy in files and create links
+          FileUtils.cp_r(File.join(repo_dir,'/etc'),destination_dir)
+          FileUtils.cp(File.join(repo_dir,'examples/config.json'),File.join(destination_dir,'etc/substratum/config.json.example'))
+          FileUtils.ln_s('/srv/substratum/services/bin/substratum',File.join(destination_dir,'/usr/bin/substratum'))
+          FileUtils.ln_s('/var/log/substratum/',File.join(destination_dir,'/srv/substratum/services/logs'))
           
-          FileUtils.cp_r(File.join(repo_dir,'/etc'),fake_root)
-          FileUtils.cp(File.join(repo_dir,'examples/config.json'),File.join(fake_root,'etc/substratum/config.json.example'))
-          FileUtils.ln_s('/srv/substratum/services/bin/substratum',File.join(fake_root,'/usr/bin/substratum'))
-          
-          Diags::Cache::Directory.save_state(@state,fake_root)
-          return fake_root
+          Diags::Cache::Directory.save_state(@state,destination_dir)
         end
+        return destination_dir
       end
 
       

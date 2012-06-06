@@ -15,7 +15,7 @@ namespace :test do
 
   # TODO : find out out to really call all 
   desc "test all"
-  task :all => [:base, :image, :seed_image, :server, :repo, "cache:all" ]
+  task :all => [:base, :image, :seed_image, :server, :repo, :pacakge_substratum, :fpm, "cache:all" ]
   
   desc "base test"
   task :base do
@@ -57,6 +57,12 @@ namespace :test do
   task :package_substratum do 
     require File.join @diags_base, 'lib', 'diags'
     require File.join @diags_test_base, 'node', 'package_substratum'
+  end
+
+  desc "test fpm builder"
+  task :fpm do 
+    require File.join @diags_base, 'lib', 'diags'
+    require File.join @diags_test_base, 'node', 'fpm'
   end
 
   namespace :cache do 

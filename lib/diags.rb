@@ -9,6 +9,7 @@ module Diags
   BASE_DIR = File.dirname LIB_DIR
   TEMP_DIR = '/tmp/diags'
   CACHE_DIR = '/var/tmp/diags'
+  GIT_CACHE_DIR = File.join CACHE_DIR, 'git'
 
   require 'fileutils'
   require 'digest/md5'
@@ -21,6 +22,7 @@ module Diags
   require 'diags/node/base'
   require 'diags/node/package'
   require 'diags/node/package_substratum'
+  require 'diags/node/fpm'
   require 'diags/node/image'
   require 'diags/node/server'
   require 'diags/node/custom_image'

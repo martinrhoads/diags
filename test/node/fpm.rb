@@ -49,7 +49,7 @@ class TestPackageSubstratum < MiniTest::Unit::TestCase
       'build_artifact' => '*',
     }
 
-
+    
     # build dependencies
     @substratum_services_hash['dependencies'] = {}
     @config['repos'].each do |repo,repo_options| 
@@ -66,7 +66,6 @@ class TestPackageSubstratum < MiniTest::Unit::TestCase
 
     @package = Diags::Node::PackageSubstratum.new @substratum_services_hash
     
-
     @fpm_hash = {
       'apt_dependencies' => @config['apt_dependencies'],
       'version' => '0.5.1',
@@ -77,12 +76,15 @@ class TestPackageSubstratum < MiniTest::Unit::TestCase
 dpkg-trigger ldconfig 
 "
     }
+    
+
+    @frm_package = Diags::Node::FPM.new(@fpm_hash)
   end
   
   def test_foo
-    puts "in foo" 
-#    dir = @package.go
-    puts "build substratum package in #{dir}"
+    puts "in foo"
+    dir = @frm_package.go
+    puts "built frm package in #{dir}"
     assert true
   end
 

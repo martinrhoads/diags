@@ -20,7 +20,7 @@ module Diags
         formatted_command = ''
         formatted_command << "cd #{directory} && " if defined? directory
         formatted_command << command.gsub(/#.*$/,'') # remove any comments
-        output = `bash -cex '#{formatted_command}'`.chomp
+        output = `bash -cex '#{formatted_command}' 2>&1 `.chomp
       rescue Object => o
         STDERR.puts "error caught"
         STDERR.puts "output was:"
