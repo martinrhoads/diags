@@ -1,0 +1,12 @@
+Diags Nodes: 
+
+All nodes must: 
+
+    - All nodes must provide an accessor for their 'state' attrubutes. This must be valid once an object is initiliazed. It also must include the state of it's dependencies in it's own calculation
+
+    - initialize methods must instantiate all parents as their state is needed to compute ours
+
+    - Provide a 'set_state' method. This method should be:
+      - cache aware
+      - it must return a path to the object
+      - allow an optional param which allows this value to be predefined (via 'destination_directory' param?)

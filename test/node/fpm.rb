@@ -54,8 +54,6 @@ class TestPackageSubstratum < MiniTest::Unit::TestCase
     @substratum_services_hash['dependencies'] = {}
     @config['repos'].each do |repo,repo_options| 
       repo_options['repo'] = Diags::Node::Git.new(repo_options)
-      STDERR.puts "creating package"
-      STDERR.puts "repo_options are #{repo_options}"
       package = Diags::Node::Package.new(repo_options)
       @substratum_services_hash['dependencies'][repo] = package
       package.go

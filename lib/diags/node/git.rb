@@ -13,6 +13,12 @@ module Diags
         end
       end
 
+
+      def set_state(directory=Diags::Utils::random_ramfs)
+        go directory
+      end
+      
+
       def go(directory=Diags::Utils::random_ramfs)
 
         raise "DirectoryDoesNotExist" unless Dir.exists? directory

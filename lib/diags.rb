@@ -20,6 +20,7 @@ module Diags
   require 'pry'
   
   require 'diags/node/base'
+  require 'diags/node/git'
   require 'diags/node/package'
   require 'diags/node/package_substratum'
   require 'diags/node/fpm'
@@ -28,7 +29,6 @@ module Diags
   require 'diags/node/custom_image'
   require 'diags/node/image_seed'
   require 'diags/node/package_image'
-  require 'diags/node/git'
   
   require 'diags/cache/base'
   require 'diags/cache/file'

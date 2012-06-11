@@ -33,21 +33,20 @@
           package_file
         end
         artifact_file = Diags::Cache::File.path(@state)
-        STDERR.puts "build a package in #{artifact_file}"
         artifact_file
       end
       
-      def restore_state(destination)
-        set_state(@state,destination)
+      def set_state(destination)
+        my_set_state(@state,destination)
       end
     
-      def self.restore_state(state,destination)
-        set_state(state,destination)
+      def self.set_state(state,destination)
+        my_set_state(state,destination)
       end
       
       protected
 
-      def set_state(state,destination)
+      def my_set_state(state,destination)
         go unless Cache::File.has_state?(state)
         Cache::File.restore_state(state,destination)
       end
