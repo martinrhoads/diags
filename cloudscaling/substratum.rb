@@ -1,17 +1,20 @@
-{      'apt_dependencies' => [
-                              "kyotocabinet",
-                              "libffi6",
-                              "libpcap0.8",
-                              "mini-boot",
-                              "ruby1.9.2-1",
-                              "rubygem-bundler",
-                              "syslinux",
-                              "zeromq"
-                             ],
+{      
+  'name' => 'substratum',
+  'version' => '1.2.3',
+  'apt_dependencies' => [
+                         "kyotocabinet",
+                         "libffi6",
+                         "libpcap0.8",
+                         "mini-boot",
+                         "ruby1.9.2-1",
+                         "rubygem-bundler",
+                         "syslinux",
+                         "zeromq"
+                        ],
   'origin' => 'ssh://pd.cloudscaling.com:29418/substratum-services',
   'branch' => 'develop',
   'build_command' => "
-         /usr/local/bin/bundle install --no-deployment --binstubs
+         /usr/local/bin/bundle install --no-deployment --binstubs &&
          /usr/local/bin/bundle install --deployment --binstubs
        ",
   'dependency_packages' => {
