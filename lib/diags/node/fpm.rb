@@ -1,7 +1,7 @@
 module Diags
   module Node
     class FPM < Diags::Node::Base
-      attr_accessor :state
+      attr_accessor :state, :filename
       
       def initialize(opts={})
         @package_dependency = opts['package_dependency']
@@ -15,6 +15,11 @@ module Diags
         @state = calculate_state
         @destination_file = opts[:destination_file]
         @destination_file ||= "/tmp/fpm/#{@name}-#{@version}-#{@arch}.deb"
+        @filename = "#{@name}-#{@version}-#{@arch}.deb"
+      end
+
+      def set_state
+        go
       end
 
       def go()
@@ -23,7 +28,7 @@ module Diags
           Cache::File.restore_state(@state,@destination_file)
         else
           # build
-          build_dir = @package_dependency.go
+          build_dir = @package_dependency.set_state
           dirs_to_copy = Dir.glob(File.join(build_dir,'*'))
           post_install_file = random_file
 
@@ -35,7 +40,7 @@ module Diags
           fpm_command << " -C #{build_dir} "
           @apt_dependencies.each do |apt_dependency|
             fpm_command << " -d #{apt_dependency} "
-          end
+          end if @apt_dependencies
           fpm_command << " -p #{@destination_file} "
           fpm_command << " --config-files #{@config_files} " if defined? @config_files 
           if defined? @post_install
@@ -65,7 +70,7 @@ module Diags
         hash << @version
         hash << @apt_dependencies.to_s
         hash << @arch
-        hash << @config_files
+        hash << @config_files if @config_files
         hash << @post_install unless @post_install.nil? 
         Digest::MD5.hexdigest hash
       end

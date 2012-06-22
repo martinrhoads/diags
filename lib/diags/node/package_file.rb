@@ -1,6 +1,6 @@
  module Diags
   module Node
-    class Package < Diags::Node::Base
+    class PackageFile < Diags::Node::Base
       
       def initialize(opts={})
         @repo = opts['repo']

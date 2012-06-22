@@ -21,7 +21,8 @@ module Diags
   
   require 'diags/node/base'
   require 'diags/node/git'
-  require 'diags/node/package'
+  require 'diags/node/package_file'
+  require 'diags/node/package_dir'
   require 'diags/node/package_substratum'
   require 'diags/node/fpm'
   require 'diags/node/image'

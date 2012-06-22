@@ -13,8 +13,8 @@ post_install = <<EOI
 dpkg-trigger ldconfig
 EOI
 
-ruby_repo_opts = {:origin => "git://github.com/ruby/ruby.git", :branch => 'ruby_1_9_2'}
-ruby_repo = Diags::Node::Git.new(ruby_repo_opts)
+# ruby_repo_opts = {:origin => "git://github.com/ruby/ruby.git", :branch => 'ruby_1_9_2'}
+# ruby_repo = Diags::Node::Git.new(ruby_repo_opts)
 
 include_directories = [
                        "",
@@ -92,8 +92,9 @@ files = {}
 
 base_image = Diags::Node::Image.new('precise',packages)
 substratum_image = Diags::Node::CustomImage.new(base_image,substratum_chroot_script)
-substratum_packaged = Diags::Node::PackageImage.new(substratum_image)
-substratum_packaged.go
+substratum_image.go
+# substratum_packaged = Diags::Node::PackageImage.new(substratum_image)
+# substratum_packaged.go
 
 # script = File.read(File.join(File.dirname(File.expand_path(__FILE__)),'scripts','chroot_script.sh'))
 # image = Diags::Node::Image.new('precise',packages)

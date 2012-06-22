@@ -1,3 +1,5 @@
+# This is a one-off class for handling the building of the substratum deb
+
 module Diags
   module Node
     class PackageSubstratum < Diags::Node::Base
@@ -11,7 +13,7 @@ module Diags
         # create dependency objects
         @config['dependency_packages'].each do |package,package_params| 
           package_params['repo'] = Diags::Node::Git.new package_params
-          package_object = Diags::Node::Package.new package_params
+          package_object = Diags::Node::PackageFile.new package_params
           package_params['package_object'] = package_object
         end
 

@@ -10,6 +10,11 @@ require File.join('.','lib','diags')
 
 FileUtils.mkdir_p @@diags_tmp_dir
 
+desc "remove caches and mounts"
+task :clean do 
+  run "sudo umount -lf /tmp/diags/dir-* && sudo rm -rf /tmp/diags/ /var/tmp/diags"
+end
+
 
 namespace :test do
 

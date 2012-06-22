@@ -22,6 +22,7 @@ module Diags
         run "mkdir -p #{destination_directory}"
         run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{destination_directory} clean -fd" 
         run "sudo git --git-dir=#{CACHE_DIR} --work-tree=#{destination_directory} reset --hard #{state}"
+        destination_directory
       end
     end
   end
