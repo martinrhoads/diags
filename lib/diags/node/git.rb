@@ -8,7 +8,7 @@ module Diags
         if opts['sha1']
           @sha1 = opts['sha1']
         else
-          @sha1 = `git ls-remote #{opts['origin']} | grep #{opts['branch']} | awk '{print $1}'`.chomp
+          @sha1 = `git ls-remote #{opts['origin']} | grep refs/heads/#{opts['branch']} | awk '{print $1}'`.chomp
           raise "could not find branch #{opts['branch']} on remote #{opts['origin']}" if @sha1.empty?
         end
       end
@@ -35,6 +35,7 @@ module Diags
       end
 
       def check_repo_for_commit(repo,sha1)
+        logger.debug "checking for commit #{sha1} in #{repo}"
         system "git --git-dir=/var/tmp/diags/git branch --contains #{sha1} >> /dev/null 2>&1 "
       end
 
