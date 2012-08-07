@@ -67,4 +67,3 @@ end
 
 
 STDERR.puts "end of testing..."
-STDERR.puts "destination_file is #{destination_file}"
