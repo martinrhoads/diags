@@ -31,15 +31,20 @@ module Diags
       output
     end
 
+    def epoc
+      time = Time.now
+      time.strftime("%s") + time.nsec.to_s
+    end
+
 
     def random_file
-      file = File.join(Diags::TEMP_DIR,'file-' + rand(999999).to_s)
+      file = File.join(Diags::TEMP_DIR,'file-' + epoc)
       FileUtils.touch file
       file
     end
 
     def random_dir
-      dir = File.join(Diags::TEMP_DIR,'dir-' + rand(999999).to_s)
+      dir = File.join(Diags::TEMP_DIR,'dir-' + epoc)
       Dir.mkdir dir
       dir
     end

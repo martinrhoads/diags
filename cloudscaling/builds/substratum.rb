@@ -18,23 +18,23 @@
          /usr/local/bin/bundle install --deployment --binstubs
        ",
   'dependency_packages' => {
-    'substratum-0.5.1' => {
+    'substratum-0.5.3' => {
       'origin' => 'ssh://pd.cloudscaling.com:29418/substratum',
       'branch' => 'develop',
       'build_command' => 'rake build',
-      'build_artifact' => 'pkg/substratum-0.5.1.gem',
+      'build_artifact' => 'pkg/substratum-*.gem',
     },
-    'substratum-cli-0.5.1' => {
+    'substratum-cli-0.5.3' => {
       'origin' => 'ssh://pd.cloudscaling.com:29418/substratum-cli',
       'branch' => 'develop',
       'build_command' => 'rake build',
-      'build_artifact' => 'pkg/substratum-cli-0.5.1.gem',
+      'build_artifact' => 'pkg/substratum-cli-*.gem',
     },
     'jason-schema' => {
       'origin' => 'git://github.com/shadoi/json-schema.git',
       'branch' => 'master',
       'build_command' => '/usr/local/bin/gem build json-schema.gemspec',
-      'build_artifact' => 'json-schema-1.0.5.gem',
+      'build_artifact' => 'json-schema-*.gem',
     }
   },
 }
