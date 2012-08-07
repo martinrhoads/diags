@@ -5,88 +5,41 @@ file = File.expand_path __FILE__
 diags_dir = File.dirname File.dirname file
 diags_lib = File.join(diags_dir,'lib/diags')
 cloudscaling_dir = File.dirname file
-deb_dir = File.join cloudscaling_dir, 'debs'
-
+public_dir = File.join(cloudscaling_dir,'public')
+@@deb_dir = File.join cloudscaling_dir, 'debs'
+public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 2`.strip
+port = '4567'
 
 
 require diags_lib
 Dir.chdir cloudscaling_dir
 
 
-# FileUtils.rm_rf deb_dir
-# FileUtils.mkdir_p deb_dir
+# FileUtils.rm_rf @@deb_dir
+# FileUtils.mkdir_p @@deb_dir
 
 
 # read build description file
-raw_file = File.read('all.rb')
-project = eval raw_file
-md5 = Digest::MD5.hexdigest(raw_file)
+#raw_file = File.read('all.rb')
+#project = eval raw_file
+#md5 = Digest::MD5.hexdigest(raw_file)
 
 
-# iterate through package build
-project.each do |name,config|
-  config.merge!({'name'=>name})
-  puts "building: #{name}"
-  case config['type']
-  when "PackageDir"
-    repo_object = Diags::Node::Git.new config
-    config['repo'] = repo_object
-    package_object = Diags::Node::PackageDir.new config
-    config['package_dependency'] = package_object
-    fpm_object = Diags::Node::FPM.new config
-    deb = fpm_object.set_state
-    FileUtils.cp(deb,File.join('debs',fpm_object.filename))
-    puts "made deb at #{fpm_object.filename}"
-  when "PackageFile"
-    config['repo'] = Diags::Node::Git.new config
-    package_object = Diags::Node::PackageFile.new config
-    package_object.set_state File.join(deb_dir,"#{name}.deb")
-  when "PackageMiniboot"
-    config['repo'] = Diags::Node::Git.new(config)
-    config['package_object'] = Diags::Node::PackageFile.new(config)
-    destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
-    FileUtils.mkdir_p File.dirname(destination_file)
-    config['package_object'].set_state destination_file
-    # TODO: something better than this:
-    run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
-    config['package_dependency'] = Diags::Node::PackageDir.new config
-    miniboot_fpm_object = Diags::Node::FPM.new config
-    miniboot_deb = miniboot_fpm_object.set_state
-    FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
-  when "PackageSubstratum"
-    config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
-    substratum_fpm_object = Diags::Node::FPM.new(config)
-    deb = substratum_fpm_object.set_state
-    FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
-  else
-    STDERR.puts "    unknown type"
-    STDERR.puts "could not determine type for #{name}"
-    STDERR.puts "config:\n#{config}"
-    raise "could not determine type for #{name}"
-  end
-end if false
 
-
-repo_dir = File.join('/tmp/martin',md5)
-conf_dir = File.join(repo_dir,'conf')
-
-FileUtils.rm_rf repo_dir
-FileUtils.mkdir_p conf_dir
-
-incoming_file = <<EOF
+@@incoming_file = <<EOF
 Name: default
 IncomingDir: /srv/apt_incoming
 TempDir: /tmp
 Allow: lucid maverick natty
 EOF
 
-pulls_file = <<EOF
+@@pulls_file = <<EOF
 Name: natty
 From: natty
 Components: main universe multiverse
 EOF
 
-distributions_file = <<EOF
+@@distributions_file = <<EOF
 Origin: apt.cloudscaling.com
 Label: apt repository lucid
 Codename: lucid
@@ -122,16 +75,12 @@ Description: Cloudscaling APT repository
 SignWith: apt@cloudscaling.com
 EOF
 
-options_file = <<EOF
+@@options_file = <<EOF
 gnupghome #{File.join(ENV['HOME'],'.gnupg')}
 EOF
 
 
-%w{distributions incoming pulls options}.each do |file|
-  File.open(File.join(conf_dir,file), 'w') {|f| f.write(eval "#{file}_file") }
-end
-
-key_file = <<EOF
+@@key_file = <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
@@ -165,6 +114,78 @@ AA==
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
-File.open(File.join(conf_dir,'apt@cloudscaling.com.gpg.key'), 'w') {|f| f.write(key_file) }
-`/usr/bin/reprepro --noskipold -Vb #{repo_dir} includedeb precise debs/*.deb`
-raise "could not build repo" unless $?.success?
+
+def build_project(project)
+  project.each do |name,config|
+    config.merge!({'name'=>name})
+    puts "building: #{name}"
+    puts "config is: #{config.inspect}"
+    case config['type']
+    when "PackageDir"
+      repo_object = Diags::Node::Git.new config
+      config['repo'] = repo_object
+      package_object = Diags::Node::PackageDir.new config
+      config['package_dependency'] = package_object
+      fpm_object = Diags::Node::FPM.new config
+      deb = fpm_object.set_state
+      FileUtils.cp(deb,File.join('debs',fpm_object.filename))
+      puts "made deb at #{fpm_object.filename}"
+    when "PackageFile"
+      config['repo'] = Diags::Node::Git.new config
+      package_object = Diags::Node::PackageFile.new config
+      STDERR.puts "name is #{name}"
+      STDERR.puts "@@deb_dir is #{@@deb_dir}"
+      package_object.set_state File.join(@@deb_dir,"#{name}.deb")
+    when "PackageMiniboot"
+      config['repo'] = Diags::Node::Git.new(config)
+      config['package_object'] = Diags::Node::PackageFile.new(config)
+      destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
+      FileUtils.mkdir_p File.dirname(destination_file)
+      config['package_object'].set_state destination_file
+      # TODO: something better than this:
+      run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
+      config['package_dependency'] = Diags::Node::PackageDir.new config
+      miniboot_fpm_object = Diags::Node::FPM.new config
+      miniboot_deb = miniboot_fpm_object.set_state
+      FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
+    when "PackageSubstratum"
+      config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
+      substratum_fpm_object = Diags::Node::FPM.new(config)
+      deb = substratum_fpm_object.set_state
+      FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
+    else
+      STDERR.puts "    unknown type"
+      STDERR.puts "could not determine type for #{name}"
+      STDERR.puts "config:\n#{config}"
+      raise "could not determine type for #{name}"
+    end
+  end 
+end
+
+def deploy_project(destination) 
+  conf_dir = File.join(destination,'conf')
+  FileUtils.rm_rf destination
+  FileUtils.mkdir_p conf_dir
+  
+  %w{distributions incoming pulls options}.each do |file|
+    File.open(File.join(conf_dir,file), 'w') {|f| f.write(eval "@@#{file}_file") }
+  end
+  File.open(File.join(conf_dir,'apt@cloudscaling.com.gpg.key'), 'w') {|f| f.write(@@key_file) }
+
+  `/usr/bin/reprepro --noskipold -Vb #{destination} includedeb precise debs/*.deb`
+  raise "could not build repo" unless $?.success?
+
+end
+
+
+require 'sinatra'
+
+post '/build/:project' do 
+  project = JSON.parse request.body.read
+  md5 = Digest::MD5.hexdigest(project.to_s)
+  repo_dir = File.join(public_dir,md5)
+  destination_dir = File.join public_dir,md5
+#  build_project project
+  deploy_project destination_dir
+  "http://#{public_ip}:#{port}/#{md5}"
+end
