@@ -1,72 +1,70 @@
 #!/usr/bin/env ruby
 
-file = File.expand_path __FILE__
 
+file = File.expand_path __FILE__
 diags_dir = File.dirname File.dirname file
 diags_lib = File.join(diags_dir,'lib/diags')
-
 cloudscaling_dir = File.dirname file
 deb_dir = File.join cloudscaling_dir, 'debs'
+
 
 require diags_lib
 Dir.chdir cloudscaling_dir
 
-def read_file(file)
-  eval File.read(file).gsub(/\n/,'')
-end
 
 FileUtils.rm_rf deb_dir
 FileUtils.mkdir_p deb_dir
 
-# build kyotocabinet, zeromq, and ruby
-%w{ kyotocabinet zeromq ruby1.9.2-1}.each do |package|
-  options = read_file("builds/#{package}.rb")
-  repo_object = Diags::Node::Git.new options
-  options['repo'] = repo_object
-  package_object = Diags::Node::PackageDir.new options
-  options['package_dependency'] = package_object
-  fpm_object = Diags::Node::FPM.new options
-  deb = fpm_object.set_state
-  FileUtils.cp(deb,File.join('debs',fpm_object.filename))
-  puts "made deb at #{fpm_object.filename}"
+
+# read build description file
+raise "could not find config file" unless project = eval(File.read('all.rb'))
+
+
+# iterate through package build
+project.each do |name,config|
+  config.merge!({'name'=>name})
+  puts "building: #{name}"
+  case config['type']
+
+
+  when "PackageDir"
+    repo_object = Diags::Node::Git.new config
+    config['repo'] = repo_object
+    package_object = Diags::Node::PackageDir.new config
+    config['package_dependency'] = package_object
+    fpm_object = Diags::Node::FPM.new config
+    deb = fpm_object.set_state
+    FileUtils.cp(deb,File.join('debs',fpm_object.filename))
+    puts "made deb at #{fpm_object.filename}"
+  when "PackageFile"
+    config['repo'] = Diags::Node::Git.new config
+    package_object = Diags::Node::PackageFile.new config
+    package_object.set_state File.join(deb_dir,"#{name}.deb")
+  when "PackageMiniboot"
+    config['repo'] = Diags::Node::Git.new(config)
+    config['package_object'] = Diags::Node::PackageFile.new(config)
+    destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
+    FileUtils.mkdir_p File.dirname(destination_file)
+    config['package_object'].set_state destination_file
+    # TODO: something better than this:
+    run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
+    config['package_dependency'] = Diags::Node::PackageDir.new config
+    miniboot_fpm_object = Diags::Node::FPM.new config
+    miniboot_deb = miniboot_fpm_object.set_state
+    FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
+  when "PackageSubstratum"
+    config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
+    substratum_fpm_object = Diags::Node::FPM.new(config)
+    deb = substratum_fpm_object.set_state
+    FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
+  else
+    STDERR.puts "    unknown type"
+    STDERR.puts "could not determine type for #{name}"
+    STDERR.puts "config:\n#{config}"
+    raise "could not determine type for #{name}"
+  end
 end
 
-# TODO: something better
-run "cd #{deb_dir} && fpm --gem-bin-path /usr/local/bin --gem-gem /usr/local/bin/gem -s gem -t deb bundler" \
-  unless File.exists?('debs/rubygem-bundler_1.1.4_all.deb')
 
-# build cs-python-libs
-%w{cs-python-libs}.each do |package|
-  options = read_file("builds/#{package}.rb")
-  options['repo'] = Diags::Node::Git.new options
-  package_object = Diags::Node::PackageFile.new options
-  package_object.set_state File.join(deb_dir,package)
-end
-
-
-# build substratum
-substratum_options = read_file('builds/substratum.rb')
-substratum_options['package_dependency'] = Diags::Node::PackageSubstratum.new(substratum_options)
-substratum_fpm_object = Diags::Node::FPM.new(substratum_options)
-deb = substratum_fpm_object.set_state
-FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
-
-
-# build mini-boot
-miniboot_options = read_file('builds/mini-boot.rb')
-miniboot_options['repo'] = Diags::Node::Git.new(miniboot_options)
-miniboot_options['package_object'] = Diags::Node::PackageFile.new(miniboot_options)
-destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',miniboot_options['build_artifact'])
-
-FileUtils.mkdir_p File.dirname(destination_file)
-miniboot_options['package_object'].set_state destination_file
-# TODO: something better than this:
-run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
-
-
-miniboot_options['package_dependency'] = Diags::Node::PackageDir.new miniboot_options
-miniboot_fpm_object = Diags::Node::FPM.new miniboot_options
-miniboot_deb = miniboot_fpm_object.set_state
-FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
-
+STDERR.puts "end of testing..."
 STDERR.puts "destination_file is #{destination_file}"
