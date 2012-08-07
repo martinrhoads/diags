@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'thread'
+
 
 file = File.expand_path __FILE__
 diags_dir = File.dirname File.dirname file
@@ -8,8 +10,11 @@ cloudscaling_dir = File.dirname file
 public_dir = File.join(cloudscaling_dir,'public')
 @@deb_dir = File.join cloudscaling_dir, 'debs'
 public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 2`.strip
-port = '4567'
-
+@@port = '4567'
+@@jobs = []
+@@mutex = Mutex.new
+@@current_job = nil
+@@completed_steps = 0
 
 require diags_lib
 Dir.chdir cloudscaling_dir
@@ -159,6 +164,7 @@ def build_project(project)
       STDERR.puts "config:\n#{config}"
       raise "could not determine type for #{name}"
     end
+    @@completed_steps += 1
   end 
 end
 
@@ -174,18 +180,58 @@ def deploy_project(destination)
 
   `/usr/bin/reprepro --noskipold -Vb #{destination} includedeb precise debs/*.deb`
   raise "could not build repo" unless $?.success?
-
+  FileUtils.touch File.join(destination,'.done')
 end
 
 
 require 'sinatra'
+
+get '/jobs' do 
+  "there are #{@@jobs.size} jobs queued"
+end
+
+get '/current-status' do 
+  if @@current_job.nil?
+    "there is nothing currently running"
+  else
+    "the current job has completed #{@@completed_steps} out of #{@@current_job.size} packages"
+  end
+end
 
 post '/build/:project' do 
   project = JSON.parse request.body.read
   md5 = Digest::MD5.hexdigest(project.to_s)
   repo_dir = File.join(public_dir,md5)
   destination_dir = File.join public_dir,md5
-#  build_project project
-  deploy_project destination_dir
-  "http://#{public_ip}:#{port}/#{md5}"
+  unless File.exists?(File.join(destination_dir,'.done'))
+    puts "calling build_project..."
+    Thread.new {
+      work(project,destination_dir,md5)
+    }
+  else
+    puts "already built project"
+  end
+  "http://#{public_ip}:#{@@port}/#{md5}"
 end
+
+
+def work(project,destination,md5)
+  if @@jobs.include? md5
+    STDERR.puts "job has already been queued #{md5}"
+    return
+  end
+  @@jobs << md5
+  STDERR.puts "queing job"
+  @@mutex.lock
+  @@current_job = project
+  @@completed_steps = 0
+  STDERR.puts "starting job #{md5}"
+  build_project project
+  deploy_project destination
+  @@jobs.delete md5
+  STDERR.puts "done with job #{md5}"
+  @@current_job = nil
+  @@mutex.unlock
+end
+
+
