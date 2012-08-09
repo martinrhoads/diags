@@ -82,7 +82,7 @@ SignWith: apt@cloudscaling.com
 EOF
 
 @@options_file = <<EOF
-gnupghome #{File.join(ENV['HOME'],'.gnupg')}
+gnupghome /etc/diags/gnupg
 EOF
 
 
