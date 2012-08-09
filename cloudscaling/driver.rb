@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+
 require 'thread'
 
 
@@ -186,17 +187,30 @@ end
 
 require 'sinatra'
 
+
 get '/jobs' do 
   "there are #{@@jobs.size} jobs queued"
 end
 
-get '/current-status' do 
+
+get '/check/:md5' do 
+  destination_dir = File.join public_dir,params[:md5]
+  if File.exists?(File.join(destination_dir,'.done'))
+    "done"
+  else
+    "not done"
+  end
+end
+
+
+get '/status' do 
   if @@current_job.nil?
     "there is nothing currently running"
   else
     "the current job has completed #{@@completed_steps} out of #{@@current_job.size} packages"
   end
 end
+
 
 post '/build/:project' do 
   project = JSON.parse request.body.read
@@ -211,7 +225,7 @@ post '/build/:project' do
   else
     puts "already built project"
   end
-  "http://#{public_ip}:#{@@port}/#{md5}"
+  md5
 end
 
 

@@ -67,6 +67,7 @@ module Diags
       rescue ::Errno::EACCES
         command = "sudo mkdir #{dir} && sudo chown #{Diags::USER} #{} && chmod go+w #{dir}"
         raise "Could not create cache dir. Command was '#{command}'" unless system command
+      rescue ::Errno::EEXIST
       end
       
     end
