@@ -2,6 +2,7 @@
 
 
 require 'thread'
+require 'logger'
 
 
 file = File.expand_path __FILE__
@@ -16,6 +17,8 @@ public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 
 @@mutex = Mutex.new
 @@current_job = nil
 @@completed_steps = 0
+@@log = Logger.new(STDOUT)
+@@log.level = Logger::DEBUG
 
 require diags_lib
 Dir.chdir cloudscaling_dir
@@ -122,12 +125,15 @@ EOF
 
 
 def build_project(project)
+  @@log.debug "building project"
   project.each do |name,config|
+    @@log.debug "starting build for #{name}..."
     config.merge!({'name'=>name})
     puts "building: #{name}"
     puts "config is: #{config.inspect}"
     case config['type']
     when "PackageDir"
+      @@log.debug "build PackageDir type" 
       repo_object = Diags::Node::Git.new config
       config['repo'] = repo_object
       package_object = Diags::Node::PackageDir.new config
@@ -137,12 +143,14 @@ def build_project(project)
       FileUtils.cp(deb,File.join('debs',fpm_object.filename))
       puts "made deb at #{fpm_object.filename}"
     when "PackageFile"
+      @@log.debug "build PackageFile type" 
       config['repo'] = Diags::Node::Git.new config
       package_object = Diags::Node::PackageFile.new config
       STDERR.puts "name is #{name}"
       STDERR.puts "@@deb_dir is #{@@deb_dir}"
       package_object.set_state File.join(@@deb_dir,"#{name}.deb")
     when "PackageMiniboot"
+      @@log.debug "build PackageMiniboot type" 
       config['repo'] = Diags::Node::Git.new(config)
       config['package_object'] = Diags::Node::PackageFile.new(config)
       destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
@@ -155,11 +163,13 @@ def build_project(project)
       miniboot_deb = miniboot_fpm_object.set_state
       FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
     when "PackageSubstratum"
+      @@log.debug "build PackageSubstratum type" 
       config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
       substratum_fpm_object = Diags::Node::FPM.new(config)
       deb = substratum_fpm_object.set_state
       FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
     else
+      @@log.error "unknown type"
       STDERR.puts "    unknown type"
       STDERR.puts "could not determine type for #{name}"
       STDERR.puts "config:\n#{config}"
@@ -213,12 +223,14 @@ end
 
 post '/build/:project' do 
   original_json = request.body.read
+  @@log.debug "got request #{original_json}"
   project = JSON.parse original_json
   md5 = Digest::MD5.hexdigest(project.to_s)
   repo_dir = File.join(public_dir,md5)
   destination_dir = File.join public_dir,md5
   unless File.exists?(File.join(destination_dir,'.done'))
     puts "calling build_project..."
+    @@log.debug "calling build project..."
     Thread.new {
       work(project,destination_dir,md5,original_json)
     }
@@ -230,6 +242,7 @@ end
 
 
 def work(project,destination,md5,original_json)
+  @@log.debug "calling work with #{md5}"
   if @@jobs.include? md5
     STDERR.puts "job has already been queued #{md5}"
     return
@@ -237,6 +250,7 @@ def work(project,destination,md5,original_json)
   @@jobs << md5
   STDERR.puts "queing job"
   @@mutex.lock
+  @@log.debug "aquired mutex lock"
   @@current_job = project
   @@completed_steps = 0
   STDERR.puts "starting job #{md5}"
@@ -246,6 +260,7 @@ def work(project,destination,md5,original_json)
   STDERR.puts "done with job #{md5}"
   @@current_job = nil
   @@mutex.unlock
+  @@log.debug "released mutex lock"
 end
 
 
