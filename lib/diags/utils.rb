@@ -13,7 +13,7 @@ module Diags
     end
 
 
-    def run(command,directory=nil)
+    def run(command,directory='/tmp')
       #TODO: decide if this is right 
       Diags::Utils::logger.info "running : '#{command}'" 
       begin
