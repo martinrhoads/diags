@@ -169,19 +169,18 @@ def build_project(project)
   end 
 end
 
-def deploy_project(destination) 
+def deploy_project(destination,original_json) 
   conf_dir = File.join(destination,'conf')
   FileUtils.rm_rf destination
   FileUtils.mkdir_p conf_dir
-  
   %w{distributions incoming pulls options}.each do |file|
     File.open(File.join(conf_dir,file), 'w') {|f| f.write(eval "@@#{file}_file") }
   end
   File.open(File.join(conf_dir,'apt@cloudscaling.com.gpg.key'), 'w') {|f| f.write(@@key_file) }
-
   `/usr/bin/reprepro --noskipold -Vb #{destination} includedeb precise debs/*.deb`
   raise "could not build repo" unless $?.success?
   FileUtils.touch File.join(destination,'.done')
+  File.open(File.join(destination,'build'), 'w') {|f| f.write(original_json) }
 end
 
 
@@ -213,14 +212,15 @@ end
 
 
 post '/build/:project' do 
-  project = JSON.parse request.body.read
+  original_json = request.body.read
+  project = JSON.parse original_json
   md5 = Digest::MD5.hexdigest(project.to_s)
   repo_dir = File.join(public_dir,md5)
   destination_dir = File.join public_dir,md5
   unless File.exists?(File.join(destination_dir,'.done'))
     puts "calling build_project..."
     Thread.new {
-      work(project,destination_dir,md5)
+      work(project,destination_dir,md5,original_json)
     }
   else
     puts "already built project"
@@ -229,7 +229,7 @@ post '/build/:project' do
 end
 
 
-def work(project,destination,md5)
+def work(project,destination,md5,original_json)
   if @@jobs.include? md5
     STDERR.puts "job has already been queued #{md5}"
     return
@@ -241,7 +241,7 @@ def work(project,destination,md5)
   @@completed_steps = 0
   STDERR.puts "starting job #{md5}"
   build_project project
-  deploy_project destination
+  deploy_project destination, original_json
   @@jobs.delete md5
   STDERR.puts "done with job #{md5}"
   @@current_job = nil
