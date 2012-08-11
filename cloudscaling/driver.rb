@@ -19,7 +19,7 @@ public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 
 @@current_job = nil
 @@completed_steps = 0
 use Rack::Logger
-@@log = Logger.new(STDOUT)
+@@log = Logger.new(STDERR)
 @@log.level = Logger::DEBUG
 
 require diags_lib
