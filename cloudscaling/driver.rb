@@ -3,6 +3,7 @@
 
 require 'thread'
 require 'logger'
+require 'sinatra'
 
 
 file = File.expand_path __FILE__
@@ -17,6 +18,7 @@ public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 
 @@mutex = Mutex.new
 @@current_job = nil
 @@completed_steps = 0
+use Rack::Logger
 @@log = Logger.new(STDOUT)
 @@log.level = Logger::DEBUG
 
@@ -193,8 +195,6 @@ def deploy_project(destination,original_json)
   File.open(File.join(destination,'build'), 'w') {|f| f.write(original_json) }
 end
 
-
-require 'sinatra'
 
 
 get '/jobs' do 
