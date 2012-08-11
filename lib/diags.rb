@@ -49,4 +49,5 @@ unless Dir.exists? GIT_CACHE_DIR
   run "git init --bare #{GIT_CACHE_DIR}"
 end
 
+logger.level = Logger::INFO
 logger.info "starting diags run..."
