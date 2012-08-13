@@ -233,9 +233,16 @@ EOF
     unless File.exists?(File.join(destination_dir,'.done'))
       puts "calling build_project..."
       @@log.debug "calling build project..."
-      Thread.new {
-        work(project,destination_dir,md5,original_json)
-      }
+      begin
+        Thread.new {
+          work(project,destination_dir,md5,original_json)
+        }
+      rescue Object => o
+        @@log.error "hit error comming back from thread:"
+        @@log.error o.inspect
+        @@log.error o.backtrace
+        Kernel.exit 1
+      end
     else
       puts "already built project"
     end
@@ -244,25 +251,31 @@ EOF
   
   
   def work(project,destination,md5,original_json)
-    @@log.debug "calling work with #{md5}"
-    if @@jobs.include? md5
-      STDERR.puts "job has already been queued #{md5}"
-      return
+    begin
+      @@log.debug "calling work with #{md5}"
+      if @@jobs.include? md5
+        STDERR.puts "job has already been queued #{md5}"
+        return
+      end
+      @@jobs << md5
+      STDERR.puts "queing job"
+      @@mutex.lock
+      @@log.debug "aquired mutex lock"
+      @@current_job = project
+      @@completed_steps = 0
+      STDERR.puts "starting job #{md5}"
+      build_project project
+      deploy_project destination, original_json
+      @@jobs.delete md5
+      STDERR.puts "done with job #{md5}"
+      @@current_job = nil
+      @@mutex.unlock
+      @@log.debug "released mutex lock"
+    rescue Object => o
+      @@log.error "hit an error in work unit::"
+      @@log.error o.inspect
+      @@log.error o.backtrace
+      Kernel.exit 1
     end
-    @@jobs << md5
-    STDERR.puts "queing job"
-    @@mutex.lock
-    @@log.debug "aquired mutex lock"
-    @@current_job = project
-    @@completed_steps = 0
-    STDERR.puts "starting job #{md5}"
-    build_project project
-    deploy_project destination, original_json
-    @@jobs.delete md5
-    STDERR.puts "done with job #{md5}"
-    @@current_job = nil
-    @@mutex.unlock
-    @@log.debug "released mutex lock"
   end
-  
 end
