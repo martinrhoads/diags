@@ -36,21 +36,23 @@ Dir.chdir cloudscaling_dir
 #md5 = Digest::MD5.hexdigest(raw_file)
 
 
+class DiagsServer < Sinatra::Base
 
-@@incoming_file = <<EOF
+
+  @@incoming_file = <<EOF
 Name: default
 IncomingDir: /srv/apt_incoming
 TempDir: /tmp
 Allow: lucid maverick natty
 EOF
-
-@@pulls_file = <<EOF
+  
+  @@pulls_file = <<EOF
 Name: natty
 From: natty
 Components: main universe multiverse
 EOF
 
-@@distributions_file = <<EOF
+  @@distributions_file = <<EOF
 Origin: apt.cloudscaling.com
 Label: apt repository lucid
 Codename: lucid
@@ -86,12 +88,12 @@ Description: Cloudscaling APT repository
 SignWith: apt@cloudscaling.com
 EOF
 
-@@options_file = <<EOF
+  @@options_file = <<EOF
 gnupghome /etc/diags/gnupg
 EOF
-
-
-@@key_file = <<EOF
+  
+  
+  @@key_file = <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
@@ -126,141 +128,141 @@ AA==
 EOF
 
 
-def build_project(project)
-  @@log.debug "building project"
-  project.each do |name,config|
-    @@log.debug "starting build for #{name}..."
-    config.merge!({'name'=>name})
-    puts "building: #{name}"
-    puts "config is: #{config.inspect}"
-    case config['type']
-    when "PackageDir"
-      @@log.debug "build PackageDir type" 
-      repo_object = Diags::Node::Git.new config
-      config['repo'] = repo_object
-      package_object = Diags::Node::PackageDir.new config
-      config['package_dependency'] = package_object
-      fpm_object = Diags::Node::FPM.new config
-      deb = fpm_object.set_state
-      FileUtils.cp(deb,File.join('debs',fpm_object.filename))
-      puts "made deb at #{fpm_object.filename}"
-    when "PackageFile"
-      @@log.debug "build PackageFile type" 
-      config['repo'] = Diags::Node::Git.new config
-      package_object = Diags::Node::PackageFile.new config
-      STDERR.puts "name is #{name}"
-      STDERR.puts "@@deb_dir is #{@@deb_dir}"
-      package_object.set_state File.join(@@deb_dir,"#{name}.deb")
-    when "PackageMiniboot"
-      @@log.debug "build PackageMiniboot type" 
-      config['repo'] = Diags::Node::Git.new(config)
-      config['package_object'] = Diags::Node::PackageFile.new(config)
-      destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
-      FileUtils.mkdir_p File.dirname(destination_file)
-      config['package_object'].set_state destination_file
-      # TODO: something better than this:
-      run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
-      config['package_dependency'] = Diags::Node::PackageDir.new config
-      miniboot_fpm_object = Diags::Node::FPM.new config
-      miniboot_deb = miniboot_fpm_object.set_state
-      FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
-    when "PackageSubstratum"
-      @@log.debug "build PackageSubstratum type" 
-      config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
-      substratum_fpm_object = Diags::Node::FPM.new(config)
-      deb = substratum_fpm_object.set_state
-      FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
-    else
-      @@log.error "unknown type"
-      STDERR.puts "    unknown type"
-      STDERR.puts "could not determine type for #{name}"
-      STDERR.puts "config:\n#{config}"
-      raise "could not determine type for #{name}"
+  def build_project(project)
+    @@log.debug "building project"
+    project.each do |name,config|
+      @@log.debug "starting build for #{name}..."
+      config.merge!({'name'=>name})
+      puts "building: #{name}"
+      puts "config is: #{config.inspect}"
+      case config['type']
+      when "PackageDir"
+        @@log.debug "build PackageDir type" 
+        repo_object = Diags::Node::Git.new config
+        config['repo'] = repo_object
+        package_object = Diags::Node::PackageDir.new config
+        config['package_dependency'] = package_object
+        fpm_object = Diags::Node::FPM.new config
+        deb = fpm_object.set_state
+        FileUtils.cp(deb,File.join('debs',fpm_object.filename))
+        puts "made deb at #{fpm_object.filename}"
+      when "PackageFile"
+        @@log.debug "build PackageFile type" 
+        config['repo'] = Diags::Node::Git.new config
+        package_object = Diags::Node::PackageFile.new config
+        STDERR.puts "name is #{name}"
+        STDERR.puts "@@deb_dir is #{@@deb_dir}"
+        package_object.set_state File.join(@@deb_dir,"#{name}.deb")
+      when "PackageMiniboot"
+        @@log.debug "build PackageMiniboot type" 
+        config['repo'] = Diags::Node::Git.new(config)
+        config['package_object'] = Diags::Node::PackageFile.new(config)
+        destination_file = File.join(random_dir,'srv/substratum/services/tftproot/images',config['build_artifact'])
+        FileUtils.mkdir_p File.dirname(destination_file)
+        config['package_object'].set_state destination_file
+        # TODO: something better than this:
+        run "sudo cp /boot/vmlinuz-#{`uname -r`.chomp} #{File.dirname(destination_file)}"
+        config['package_dependency'] = Diags::Node::PackageDir.new config
+        miniboot_fpm_object = Diags::Node::FPM.new config
+        miniboot_deb = miniboot_fpm_object.set_state
+        FileUtils.cp(miniboot_deb,File.join('debs',miniboot_fpm_object.filename))
+      when "PackageSubstratum"
+        @@log.debug "build PackageSubstratum type" 
+        config['package_dependency'] = Diags::Node::PackageSubstratum.new(config)
+        substratum_fpm_object = Diags::Node::FPM.new(config)
+        deb = substratum_fpm_object.set_state
+        FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
+      else
+        @@log.error "unknown type"
+        STDERR.puts "    unknown type"
+        STDERR.puts "could not determine type for #{name}"
+        STDERR.puts "config:\n#{config}"
+        raise "could not determine type for #{name}"
+      end
+      @@completed_steps += 1
+    end 
+  end
+  
+  def deploy_project(destination,original_json) 
+    conf_dir = File.join(destination,'conf')
+    FileUtils.rm_rf destination
+    FileUtils.mkdir_p conf_dir
+    %w{distributions incoming pulls options}.each do |file|
+      File.open(File.join(conf_dir,file), 'w') {|f| f.write(eval "@@#{file}_file") }
     end
-    @@completed_steps += 1
-  end 
-end
-
-def deploy_project(destination,original_json) 
-  conf_dir = File.join(destination,'conf')
-  FileUtils.rm_rf destination
-  FileUtils.mkdir_p conf_dir
-  %w{distributions incoming pulls options}.each do |file|
-    File.open(File.join(conf_dir,file), 'w') {|f| f.write(eval "@@#{file}_file") }
+    File.open(File.join(conf_dir,'apt@cloudscaling.com.gpg.key'), 'w') {|f| f.write(@@key_file) }
+    `/usr/bin/reprepro --noskipold -Vb #{destination} includedeb precise debs/*.deb`
+    raise "could not build repo" unless $?.success?
+    FileUtils.touch File.join(destination,'.done')
+    File.open(File.join(destination,'build'), 'w') {|f| f.write(original_json) }
   end
-  File.open(File.join(conf_dir,'apt@cloudscaling.com.gpg.key'), 'w') {|f| f.write(@@key_file) }
-  `/usr/bin/reprepro --noskipold -Vb #{destination} includedeb precise debs/*.deb`
-  raise "could not build repo" unless $?.success?
-  FileUtils.touch File.join(destination,'.done')
-  File.open(File.join(destination,'build'), 'w') {|f| f.write(original_json) }
-end
-
-
-
-get '/jobs' do 
-  "there are #{@@jobs.size} jobs queued"
-end
-
-
-get '/check/:md5' do 
-  destination_dir = File.join public_dir,params[:md5]
-  if File.exists?(File.join(destination_dir,'.done'))
-    "done"
-  else
-    "not done"
+  
+  
+  
+  get '/jobs' do 
+    "there are #{@@jobs.size} jobs queued"
   end
-end
-
-
-get '/status' do 
-  if @@current_job.nil?
-    "there is nothing currently running"
-  else
-    "the current job has completed #{@@completed_steps} out of #{@@current_job.size} packages"
+  
+  
+  get '/check/:md5' do 
+    destination_dir = File.join public_dir,params[:md5]
+    if File.exists?(File.join(destination_dir,'.done'))
+      "done"
+    else
+      "not done"
+    end
   end
-end
-
-
-post '/build/:project' do 
-  original_json = request.body.read
-  @@log.debug "got request #{original_json}"
-  project = JSON.parse original_json
-  md5 = Digest::MD5.hexdigest(project.to_s)
-  repo_dir = File.join(public_dir,md5)
-  destination_dir = File.join public_dir,md5
-  unless File.exists?(File.join(destination_dir,'.done'))
-    puts "calling build_project..."
-    @@log.debug "calling build project..."
-    Thread.new {
-      work(project,destination_dir,md5,original_json)
-    }
-  else
-    puts "already built project"
+  
+  
+  get '/status' do 
+    if @@current_job.nil?
+      "there is nothing currently running"
+    else
+      "the current job has completed #{@@completed_steps} out of #{@@current_job.size} packages"
+    end
   end
-  md5
-end
-
-
-def work(project,destination,md5,original_json)
-  @@log.debug "calling work with #{md5}"
-  if @@jobs.include? md5
-    STDERR.puts "job has already been queued #{md5}"
-    return
+  
+  
+  post '/build/:project' do 
+    original_json = request.body.read
+    @@log.debug "got request #{original_json}"
+    project = JSON.parse original_json
+    md5 = Digest::MD5.hexdigest(project.to_s)
+    repo_dir = File.join(public_dir,md5)
+    destination_dir = File.join public_dir,md5
+    unless File.exists?(File.join(destination_dir,'.done'))
+      puts "calling build_project..."
+      @@log.debug "calling build project..."
+      Thread.new {
+        work(project,destination_dir,md5,original_json)
+      }
+    else
+      puts "already built project"
+    end
+    md5
   end
-  @@jobs << md5
-  STDERR.puts "queing job"
-  @@mutex.lock
-  @@log.debug "aquired mutex lock"
-  @@current_job = project
-  @@completed_steps = 0
-  STDERR.puts "starting job #{md5}"
-  build_project project
-  deploy_project destination, original_json
-  @@jobs.delete md5
-  STDERR.puts "done with job #{md5}"
-  @@current_job = nil
-  @@mutex.unlock
-  @@log.debug "released mutex lock"
+  
+  
+  def work(project,destination,md5,original_json)
+    @@log.debug "calling work with #{md5}"
+    if @@jobs.include? md5
+      STDERR.puts "job has already been queued #{md5}"
+      return
+    end
+    @@jobs << md5
+    STDERR.puts "queing job"
+    @@mutex.lock
+    @@log.debug "aquired mutex lock"
+    @@current_job = project
+    @@completed_steps = 0
+    STDERR.puts "starting job #{md5}"
+    build_project project
+    deploy_project destination, original_json
+    @@jobs.delete md5
+    STDERR.puts "done with job #{md5}"
+    @@current_job = nil
+    @@mutex.unlock
+    @@log.debug "released mutex lock"
+  end
+  
 end
-
-
