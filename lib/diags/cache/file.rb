@@ -12,6 +12,7 @@ module Diags
 
       def self.restore_state(state,destination_file)
         raise "can not find state" unless self.has_state?(state)
+        FileUtils.mkdir_p(::File.dirname destination_file)
         FileUtils.cp(path(state),destination_file)
       end
 
