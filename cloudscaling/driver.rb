@@ -275,7 +275,9 @@ EOF
       @@log.error "hit an error in work unit::"
       @@log.error o.inspect
       @@log.error o.backtrace
-      Kernel.exit 1
+      @@log.error "releasing thread..."
+    ensure
+      @@mutex.unlock
     end
   end
 end
