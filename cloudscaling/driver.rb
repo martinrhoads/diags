@@ -10,7 +10,7 @@ file = File.expand_path __FILE__
 diags_dir = File.dirname File.dirname file
 diags_lib = File.join(diags_dir,'lib/diags')
 cloudscaling_dir = File.dirname file
-public_dir = File.join(cloudscaling_dir,'public')
+@@public_dir = File.join(cloudscaling_dir,'public')
 @@deb_dir = File.join cloudscaling_dir, 'debs'
 public_ip = `ifconfig eth1 | grep 'inet addr:' | awk '{print $2}' | cut -d : -f 2`.strip
 @@port = '4567'
@@ -205,7 +205,7 @@ EOF
   
   
   get '/check/:md5' do 
-    destination_dir = File.join public_dir,params[:md5]
+    destination_dir = File.join @@public_dir,params[:md5]
     if File.exists?(File.join(destination_dir,'.done'))
       "done"
     else
@@ -228,8 +228,8 @@ EOF
     @@log.debug "got request #{original_json}"
     project = JSON.parse original_json
     md5 = Digest::MD5.hexdigest(project.to_s)
-    repo_dir = File.join(public_dir,md5)
-    destination_dir = File.join public_dir,md5
+    repo_dir = File.join(@@public_dir,md5)
+    destination_dir = File.join @@public_dir,md5
     unless File.exists?(File.join(destination_dir,'.done'))
       puts "calling build_project..."
       @@log.debug "calling build project..."
