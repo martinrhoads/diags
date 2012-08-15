@@ -172,6 +172,24 @@ EOF
         substratum_fpm_object = Diags::Node::FPM.new(config)
         deb = substratum_fpm_object.set_state
         FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
+      when "ImagePackage"
+        @@log.debug "build ImagePackage type" 
+        base_image = Diags::Node::Image.new(config['release'],config['packages'])
+        if config.has_key?('chroot_script')
+          custom_image = Diags::Node::CustomImage.new(base_image,config['chroot_script'])
+        else
+          custom_image = base_image
+        end
+        # looks like PacakgeDir will accecpt any build type that has a
+        # go method, so we will generalize that out later, but for
+        # now, just reuse the name
+        config['repo'] = custom_image
+        package_object = Diags::Node::PackageDir.new config
+        config['package_dependency'] = package_object
+        fpm_object = Diags::Node::FPM.new config
+        deb = fpm_object.set_state
+        FileUtils.cp(deb,File.join('debs',fpm_object.filename))
+        puts "made deb at #{fpm_object.filename}"
       else
         @@log.error "unknown type"
         STDERR.puts "    unknown type"

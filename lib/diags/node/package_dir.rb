@@ -1,3 +1,7 @@
+# Note: we should probally rename the repo opt to dependency or
+# something, as this pattern will work for more than just repo-type
+# builds (e.g. images).
+
  module Diags
   module Node
     class PackageDir < Diags::Node::Base
