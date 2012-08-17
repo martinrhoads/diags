@@ -4,7 +4,7 @@ Dir.chdir(File.dirname __FILE__)
 
 module Diags
 
-  USER = ENV['USER']
+  USER = ENV['USER'] ? ENV['USER'] : 'root'
   LIB_DIR = File.dirname __FILE__
   BASE_DIR = File.dirname LIB_DIR
   TEMP_DIR = '/tmp/diags'

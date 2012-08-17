@@ -4,6 +4,7 @@ module Diags
       attr_accessor :state, :filename
       
       def initialize(opts={})
+        raise "you need to specify a version" unless opts['version']
         @package_dependency = opts['package_dependency']
         @name = opts['name']
         @version = opts['version']

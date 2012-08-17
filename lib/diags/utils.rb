@@ -52,7 +52,7 @@ module Diags
     def random_ramfs
       dir = random_dir
       run "sudo mount -t ramfs size=20m #{dir}"
-      run "sudo chown $USER:$USER #{dir}"
+      run "sudo chown #{USER}:#{USER} #{dir}" 
       dir
     end
 
@@ -65,7 +65,7 @@ module Diags
       begin
         FileUtils.mkdir_p dir
       rescue ::Errno::EACCES
-        command = "sudo mkdir #{dir} && sudo chown #{Diags::USER} #{} && chmod go+w #{dir}"
+        command = "sudo mkdir -p #{dir} && sudo chown #{USER} #{dir} && chmod go+w #{dir}"
         raise "Could not create cache dir. Command was '#{command}'" unless system command
       rescue ::Errno::EEXIST
       end
