@@ -4,6 +4,7 @@
 require 'thread'
 require 'logger'
 require 'sinatra'
+require 'uri'
 
 
 file = File.expand_path __FILE__
@@ -172,7 +173,7 @@ EOF
         substratum_fpm_object = Diags::Node::FPM.new(config)
         deb = substratum_fpm_object.set_state
         FileUtils.cp(deb,File.join('debs',substratum_fpm_object.filename))
-      when "ImagePackage"
+      when "CloudscalingBaseImage"
         @@log.debug "build ImagePackage type" 
         base_image = Diags::Node::Image.new(config['release'],config['packages'])
         if config.has_key?('chroot_script')
@@ -242,8 +243,8 @@ EOF
   
   
   post '/build/:project' do 
-    original_json = request.body.read
-    @@log.debug "got request #{original_json}"
+    original_json = URI.decode request.body.read
+    @@log.debug "got request..."
     project = JSON.parse original_json
     md5 = Digest::MD5.hexdigest(project.to_s)
     repo_dir = File.join(@@public_dir,md5)
