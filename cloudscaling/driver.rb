@@ -267,7 +267,49 @@ EOF
     end
     md5
   end
-  
+
+
+  # this function will generate an index.html page so users can browse the public files dir
+  get '/*' do
+    STDERR.puts "splat is #{params[:splat]}"
+    path = File.join('public',params[:splat].first)
+    puts "path is #{path}"
+    if Dir.exists?(path)
+      puts "this is a valid dir"
+      @@files = Dir.glob File.join(path,'*')
+      puts "files is #{@@files}"
+      code = '<html>
+  <head>
+    <title>Yo Bitch!</title>
+  </head>
+  <body bgcolor=white>
+
+    <table border="0" cellpadding="10">
+      <tr>
+        <td>
+          <img src="images/springsource.png">
+        </td>
+        <td>
+          <h1>Yo Bitch!</h1>
+        </td>
+      </tr>
+    </table>
+
+    <p>Welcome to Diags! </p>
+    <p>Here are the files:
+    <ul>
+      <% @@files.each do |file| %>
+      <li><a href="<%= file.split("/").drop(1).join("/") %>"><%= File.basename file %></a>
+      <% end %>
+    </ul>
+
+  </body>
+</html>'
+      erb code
+    else
+      404
+    end
+  end
   
   def work(project,destination,md5,original_json)
     begin
