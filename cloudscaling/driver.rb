@@ -276,8 +276,8 @@ EOF
     puts "path is #{path}"
     if Dir.exists?(path)
       puts "this is a valid dir"
-      @@files = Dir.glob File.join(path,'*')
-      puts "files is #{@@files}"
+      @files = Dir.glob File.join(path,'*')
+      puts "files is #{@files}"
       code = '<html>
   <head>
     <title>Yo Bitch!</title>
@@ -298,7 +298,7 @@ EOF
     <p>Welcome to Diags! </p>
     <p>Here are the files:
     <ul>
-      <% @@files.each do |file| %>
+      <% @files.each do |file| %>
       <li><a href="<%= file.split("/").drop(1).join("/") %>"><%= File.basename file %></a>
       <% end %>
     </ul>
